@@ -127,10 +127,24 @@ static int ads7828_probe(struct i2c_client *client,
 		return -ENOMEM;
 
 	if (pdata) {
+	  printk(KERN_ERROR "found ads782 in platform device");
 		diff_input = pdata->diff_input;
 		ext_vref = pdata->ext_vref;
 		if (ext_vref && pdata->vref_mv)
 			vref_mv = pdata->vref_mv;
+	} else if (dev.of_node)	{
+	  printk(KERN_ERROR "found ads782 in device tree");
+	       //	       (unsigned long long)io_tlb_start,
+	       //	       (unsigned long long)io_tlb_end,
+	       //	       bytes >> 20, vstart, vend - 1);
+	  void *ptr;
+	  ptr = of_get_property(op->dev.of_node, "xlnx,slv-awidth", NULL);
+	  //http://xillybus.com/tutorials/device-tree-zynq-5
+	  if (!ptr) {
+	    /* Couldn't find the entry */
+	  }
+	} else {
+	  printk(KERN_ERROR "didnt find ads 7828");
 	}
 
 	/* Bound Vref with min/max values */
