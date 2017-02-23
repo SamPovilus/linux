@@ -34,6 +34,9 @@
 #include <linux/platform_data/ads7828.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
+#include <linux/regulator/consumer.h>
+
+#define MV_TO_UV 1000
 
 /* The ADS7828 registers */
 #define ADS7828_CMD_SD_SE	0x80	/* Single ended inputs */
@@ -118,9 +121,12 @@ static int ads7828_probe(struct i2c_client *client,
 	struct ads7828_data *data;
 	struct device *hwmon_dev;
 	unsigned int vref_mv = ADS7828_INT_VREF_MV;
+	unsigned int vref_uv;
 	bool diff_input = false;
 	bool ext_vref = false;
 	unsigned int regval;
+	struct regulator *reg;
+
 
 	data = devm_kzalloc(dev, sizeof(struct ads7828_data), GFP_KERNEL);
 	if (!data)
@@ -131,6 +137,18 @@ static int ads7828_probe(struct i2c_client *client,
 		ext_vref = pdata->ext_vref;
 		if (ext_vref && pdata->vref_mv)
 			vref_mv = pdata->vref_mv;
+	} else if (dev->of_node) {
+		diff_input = of_property_read_bool(dev->of_node,
+						   "ti,differential-input");
+		reg = devm_regulator_get_optional(dev, "vref");
+		if (!IS_ERR(reg)) {
+			vref_uv = regulator_get_voltage(reg);
+			vref_mv = DIV_ROUND_CLOSEST(vref_uv, 1000);
+			if (vref_mv < ADS7828_EXT_VREF_MV_MIN ||
+			    vref_mv > ADS7828_EXT_VREF_MV_MAX)
+				return -EINVAL;
+			ext_vref = true;
+		}
 	}
 
 	/* Bound Vref with min/max values */
