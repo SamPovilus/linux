@@ -1,0 +1,18 @@
+ads7828 properties
+
+Required properties:
+- compatible:
+	Should be one of
+	       ti,ads7828
+	       ti,ads7830
+- reg: I2C address
+
+Optional properties:
+
+- diff-input
+  Set to use the device in differential mode.
+- ext-vref
+  Set to enable the external voltage reference on the device.
+- vref-mv
+  The external reference on the device is set to this as an unsigned integer in
+  milivolts. Must use "ext_vref" for this to have any meaning.
