@@ -142,18 +142,23 @@ static int ads7828_probe(struct i2c_client *client,
 	  ext_vref_ptr = of_get_property(dev->of_node, "ads7828,ext_vref", NULL);
 	  ext_vref = (bool) *ext_vref_ptr;
 	  vref_mv_ptr = of_get_property(dev->of_node, "ads7828,vref_mv", NULL);
-	  vref_mv = (bool) *vref_mv_ptr;
+	  vref_mv = (unsigned int) *vref_mv_ptr;
 	  //http://xillybus.com/tutorials/device-tree-zynq-5
-	  printk(KERN_ERR, "found ads782 in device tree %d", diff_input);
+	  printk(KERN_ERR, "found ads782 in device tree %d %d %d", diff_input, ext_vref, vref_mv);
 	  //	       (unsigned long long)io_tlb_start,
 	  //	       (unsigned long long)io_tlb_end,
 	  //	       bytes >> 20, vstart, vend - 1);
 	  if (!diff_input_ptr) {
-	    /* Couldn't find the entry */
 	    printk(KERN_ERR, "couldn't find diff input property");
 	  }
+	  if (!ext_vref_ptr) {
+	    printk(KERN_ERR, "couldn't find ext vref property");
+	  }
+	  if (!vref_mv_ptr) {
+	    printk(KERN_ERR, "couldn't find vref mv property");
+	  }
 	} else {
-	  printk(KERN_ERR, "didnt find ads 7828");
+	  printk(KERN_ERR, "didnt find ads 7828 in any config method, using defaults");
 	}
 
 	/* Bound Vref with min/max values */
