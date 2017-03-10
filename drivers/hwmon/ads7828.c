@@ -57,14 +57,16 @@ struct ads7828_data {
 /* Command byte C2,C1,C0 - see datasheet */
 static inline u8 ads7828_cmd_byte(u8 cmd, int ch)
 {
-	return cmd | (((ch >> 1) | (ch & 0x01) << 2) << 4);
+  pr_emerg( "in ads7828 cmd byte");
+  return cmd | (((ch >> 1) | (ch & 0x01) << 2) << 4);
+  /*  return 0xff;*/
 }
 
 /* sysfs callback function */
 static ssize_t ads7828_show_in(struct device *dev, struct device_attribute *da,
 			       char *buf)
 {
-  printk(KERN_EMERG, "in ads7828 show in");
+  pr_emerg( "in ads7828 show in");
   
 	struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
 	struct ads7828_data *data = dev_get_drvdata(dev);
@@ -116,7 +118,7 @@ static const struct regmap_config ads2830_regmap_config = {
 static int ads7828_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
-  printk(KERN_EMERG, "in ads7828 probe");
+  pr_emerg( "in ads7828 probe");
 	struct device *dev = &client->dev;
 	struct ads7828_platform_data *pdata = dev_get_platdata(dev);
 	struct ads7828_data *data;
@@ -131,7 +133,7 @@ static int ads7828_probe(struct i2c_client *client,
 		return -ENOMEM;
 
 	if (pdata) {
-	  printk(KERN_ERR, "found ads782 in platform device");
+	  pr_emerg( "found ads782 in platform device");
 		diff_input = pdata->diff_input;
 		ext_vref = pdata->ext_vref;
 		if (ext_vref && pdata->vref_mv)
@@ -140,28 +142,44 @@ static int ads7828_probe(struct i2c_client *client,
 	  bool *diff_input_ptr;
 	  bool *ext_vref_ptr;
 	  unsigned int *vref_mv_ptr;
-	  diff_input_ptr = of_get_property(dev->of_node, "ads7828,diff_input", NULL);
-	  diff_input = (bool) *diff_input_ptr;
-	  ext_vref_ptr = of_get_property(dev->of_node, "ads7828,ext_vref", NULL);
-	  ext_vref = (bool) *ext_vref_ptr;
-	  vref_mv_ptr = of_get_property(dev->of_node, "ads7828,vref_mv", NULL);
-	  vref_mv = (unsigned int) *vref_mv_ptr;
+	  pr_emerg("in dev tree");
+	  pr_emerg("dev %p", dev);
+	  pr_emerg("dev->of_node %p", dev->of_node);
+	  diff_input_ptr = of_get_property(dev->of_node, "diff_input", NULL);
+	  if(diff_input_ptr)
+	    {
+	      diff_input = (bool) *diff_input_ptr;
+	      pr_emerg( "diff input %d", diff_input);
+
+	    }
+	  ext_vref_ptr = of_get_property(dev->of_node, "ext_vref", NULL);
+	  if(ext_vref_ptr)
+	    {
+	      ext_vref = (bool) *ext_vref_ptr;
+	      pr_emerg( "ext vref %d", ext_vref);
+	    }
+	  vref_mv_ptr = of_get_property(dev->of_node, "vref_mv", NULL);
+	  if(vref_mv_ptr)
+	    {
+	      vref_mv = (unsigned int) *vref_mv_ptr;
+	      pr_emerg( "vref mv %d", vref_mv);
+	    }
 	  //http://xillybus.com/tutorials/device-tree-zynq-5
-	  printk(KERN_ERR, "found ads782 in device tree %d %d %d", diff_input, ext_vref, vref_mv);
+	  //	  pr_emerg( "found ads782 in device tree %d %d %d", diff_input, ext_vref, vref_mv);
 	  //	       (unsigned long long)io_tlb_start,
 	  //	       (unsigned long long)io_tlb_end,
 	  //	       bytes >> 20, vstart, vend - 1);
 	  if (!diff_input_ptr) {
-	    printk(KERN_ERR, "couldn't find diff input property");
+	    pr_emerg( "couldn't find diff input property");
 	  }
 	  if (!ext_vref_ptr) {
-	    printk(KERN_ERR, "couldn't find ext vref property");
+	    pr_emerg( "couldn't find ext vref property");
 	  }
 	  if (!vref_mv_ptr) {
-	    printk(KERN_ERR, "couldn't find vref mv property");
+	    pr_emerg( "couldn't find vref mv property");
 	  }
 	} else {
-	  printk(KERN_ERR, "didnt find ads 7828 in any config method, using defaults");
+	  pr_emerg( "didnt find ads 7828 in any config method, using defaults");
 	}
 
 	/* Bound Vref with min/max values */
