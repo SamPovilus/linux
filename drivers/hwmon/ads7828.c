@@ -57,17 +57,13 @@ struct ads7828_data {
 /* Command byte C2,C1,C0 - see datasheet */
 static inline u8 ads7828_cmd_byte(u8 cmd, int ch)
 {
-  pr_emerg( "in ads7828 cmd byte");
-  return cmd | (((ch >> 1) | (ch & 0x01) << 2) << 4);
-  /*  return 0xff;*/
+	return cmd | (((ch >> 1) | (ch & 0x01) << 2) << 4);
 }
 
 /* sysfs callback function */
 static ssize_t ads7828_show_in(struct device *dev, struct device_attribute *da,
 			       char *buf)
 {
-  pr_emerg( "in ads7828 show in");
-  
 	struct sensor_device_attribute *attr = to_sensor_dev_attr(da);
 	struct ads7828_data *data = dev_get_drvdata(dev);
 	u8 cmd = ads7828_cmd_byte(data->cmd_byte, attr->index);
@@ -118,7 +114,6 @@ static const struct regmap_config ads2830_regmap_config = {
 static int ads7828_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
-  pr_emerg( "in ads7828 probe");
 	struct device *dev = &client->dev;
 	struct ads7828_platform_data *pdata = dev_get_platdata(dev);
 	struct ads7828_data *data;
@@ -134,7 +129,6 @@ static int ads7828_probe(struct i2c_client *client,
 		return -ENOMEM;
 
 	if (pdata) {
-	  pr_emerg( "found ads782 in platform device");
 		diff_input = pdata->diff_input;
 		ext_vref = pdata->ext_vref;
 		if (ext_vref && pdata->vref_mv)
