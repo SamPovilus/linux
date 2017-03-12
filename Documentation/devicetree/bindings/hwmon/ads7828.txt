@@ -9,10 +9,10 @@ Required properties:
 
 Optional properties:
 
-- diff_input
+- diff-input
   Set to use the device in differential mode.
-- ext_vref
+- ext-vref
   Set to enable the external voltage reference on the device.
-- vref_mv
+- vref-mv
   The external reference on the device is set to this as an unsigned integer in
   milivolts. Must use "ext_vref" for this to have any meaning.

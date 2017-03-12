@@ -140,11 +140,11 @@ static int ads7828_probe(struct i2c_client *client,
 		if (ext_vref && pdata->vref_mv)
 			vref_mv = pdata->vref_mv;
 	} else if (dev->of_node) {
-		if (of_get_property(dev->of_node, "diff_input", NULL))
+		if (of_get_property(dev->of_node, "diff-input", NULL))
 			diff_input = true;
-		if (of_get_property(dev->of_node, "ext_vref", NULL))
+		if (of_get_property(dev->of_node, "ext-vref", NULL))
 			ext_vref = true;
-		if (!of_property_read_u32(dev->of_node, "vref_mv", &vref_mv_tmp)
+		if (!of_property_read_u32(dev->of_node, "vref-mv", &vref_mv_tmp)
 		   && ext_vref)
 			vref_mv = vref_mv_tmp;
 	}
