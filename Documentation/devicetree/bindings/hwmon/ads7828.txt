@@ -9,10 +9,9 @@ Required properties:
 
 Optional properties:
 
-- diff-input
+- differential-input
   Set to use the device in differential mode.
-- ext-vref
-  Set to enable the external voltage reference on the device.
-- vref-mv
-  The external reference on the device is set to this as an unsigned integer in
-  milivolts. Must use "ext_vref" for this to have any meaning.
+- vref
+  The external reference on the device is set to this regulators output. If it
+  does not exists the internal reference will be used and output by the chip
+  on the pin.
