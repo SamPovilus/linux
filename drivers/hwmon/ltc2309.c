@@ -1,5 +1,5 @@
 /*
- * ltc2309.c - driver for Liner Technology LTC2309 8-channel A/D converter 
+ * ltc2309.c - Driver for Linear Technology LTC2309 8-channel A/D converter 
  * (C) 2017 Sam Povilus
  *
  * This driver is based on the lm75 and other lm_sensors/hwmon drivers
@@ -36,14 +36,18 @@
 #define LTC2309_CMD_REG 0
 #define LTC2309_DATA_REG 0
 
+#define ADS7828_INT_VREF_MV	2500	/* Internal vref is 2.5V, 2500mV */
+#define ADS7828_EXT_VREF_MV_MIN	-300	/* External vref min value gnd - 0.3 */
+#define ADS7828_EXT_VREF_MV_MAX	6300	/* External vref max value Vdd + 0.3 */
+
 /* List of supported devices */
-enum ltc2309_chips { ltc2309, ads7830 };
+enum ltc2309_chips { ltc2309 };
 
 /* Client specific data */
 struct ltc2309_data {
-	struct regmap *regmap;
+	struct i2c_client *client;
+/*	struct regmap *regmap;*/
 	u8 cmd_byte;			/* Command byte without channel bits */
-	unsigned int lsb_resol;		/* Resolution of the ADC sample LSB */
 };
 
 /* Command byte C2,C1,C0 - see datasheet */
@@ -61,18 +65,22 @@ static ssize_t ltc2309_show_in(struct device *dev, struct device_attribute *da,
 	struct ltc2309_data *data = dev_get_drvdata(dev);
 	u8 cmd = ltc2309_cmd_byte(data->cmd_byte, attr->index);
 	unsigned int regval;
-	int err;
-	s32 i2c_smbus_write_byte(const struct i2c_client *client, u8 value)
+	s32 ret;
 
-	i2c_smbus_write_word_data();
-	err = regmap_write(data->regmap, LTC2309_CMD_REG, cmd);
-	
-	err = regmap_read(data->regmap, LTC2309_DATA_REG, &regval);
-	if (err < 0)
-		return err;
-
+	ret = i2c_smbus_write_byte(dev_get_drvdata(dev)->client, cmd);
+	if(ret < 0)
+	{
+		pr_error("could not write to device\n");
+	}
+	/* As far as I can tell the command word will be ignored */
+	ret = i2c_smbus_read_word_data(dev_get_drvdata(dev)->client, 0);
+	if (ret < 0)
+	{
+		pr_error("could not read from device");
+	}
+	ret = ret >> 4;
 	return sprintf(buf, "%d\n",
-		       DIV_ROUND_CLOSEST(regval * data->lsb_resol, 1000));
+		       DIV_ROUND_CLOSEST(regval * 4096, 1000));
 }
 
 static SENSOR_DEVICE_ATTR(in0_input, S_IRUGO, ltc2309_show_in, NULL, 0);
@@ -98,69 +106,27 @@ static struct attribute *ltc2309_attrs[] = {
 
 ATTRIBUTE_GROUPS(ltc2309);
 
-static const struct regmap_config ads2828_regmap_config = {
-	.reg_bits = 8,
-	.val_bits = 16,
-};
-
-static const struct regmap_config ads2830_regmap_config = {
-	.reg_bits = 8,
-	.val_bits = 8,
-};
-
 static int ltc2309_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
 	struct device *dev = &client->dev;
-	struct ltc2309_platform_data *pdata = dev_get_platdata(dev);
 	struct ltc2309_data *data;
 	struct device *hwmon_dev;
 	unsigned int vref_mv = LTC2309_INT_VREF_MV;
 	bool diff_input = false;
 	bool ext_vref = false;
 	unsigned int regval;
-
+	
 	data = devm_kzalloc(dev, sizeof(struct ltc2309_data), GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
 
-	if (pdata) {
-		diff_input = pdata->diff_input;
-		ext_vref = pdata->ext_vref;
-		if (ext_vref && pdata->vref_mv)
-			vref_mv = pdata->vref_mv;
-	}
+	data->client = client;
 
 	/* Bound Vref with min/max values */
 	vref_mv = clamp_val(vref_mv, LTC2309_EXT_VREF_MV_MIN,
 			    LTC2309_EXT_VREF_MV_MAX);
 
-	/* LTC2309 uses 12-bit samples, while ADS7830 is 8-bit */
-	if (id->driver_data == ltc2309) {
-		data->lsb_resol = DIV_ROUND_CLOSEST(vref_mv * 1000, 4096);
-		data->regmap = devm_regmap_init_i2c(client,
-						    &ads2828_regmap_config);
-	} else {
-		data->lsb_resol = DIV_ROUND_CLOSEST(vref_mv * 1000, 256);
-		data->regmap = devm_regmap_init_i2c(client,
-						    &ads2830_regmap_config);
-	}
-
-	if (IS_ERR(data->regmap))
-		return PTR_ERR(data->regmap);
-
-	data->cmd_byte = ext_vref ? LTC2309_CMD_PD1 : LTC2309_CMD_PD3;
-	if (!diff_input)
-		data->cmd_byte |= LTC2309_CMD_SD_SE;
-
-	/*
-	 * Datasheet specifies internal reference voltage is disabled by
-	 * default. The internal reference voltage needs to be enabled and
-	 * voltage needs to settle before getting valid ADC data. So perform a
-	 * dummy read to enable the internal reference voltage.
-	 */
-	if (!ext_vref)
-		regmap_read(data->regmap, data->cmd_byte, &regval);
 
 	hwmon_dev = devm_hwmon_device_register_with_groups(dev, client->name,
 							   data,
@@ -170,7 +136,6 @@ static int ltc2309_probe(struct i2c_client *client,
 
 static const struct i2c_device_id ltc2309_device_ids[] = {
 	{ "ltc2309", ltc2309 },
-	{ "ads7830", ads7830 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, ltc2309_device_ids);
@@ -187,5 +152,6 @@ static struct i2c_driver ltc2309_driver = {
 module_i2c_driver(ltc2309_driver);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Steve Hardy <shardy@redhat.com>");
-MODULE_DESCRIPTION("Driver for TI LTC2309 A/D converter and compatibles");
+MODULE_AUTHOR("Sam Povilus <kernel.development@povil.us>");
+MODULE_DESCRIPTION("Driver for Linear Technology LTC2309 8-channel A/D "
+		   "converter");
