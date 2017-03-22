@@ -1,5 +1,5 @@
 /*
- * ltc2309.c - Driver for Linear Technology LTC2309 8-channel A/D converter 
+ * ltc2309.c - Driver for Linear Technology LTC2309 8-channel A/D converter
  * (C) 2017 Sam Povilus
  *
  * This driver is based on the lm75 and other lm_sensors/hwmon drivers
@@ -36,9 +36,9 @@
 #define LTC2309_CMD_REG 0
 #define LTC2309_DATA_REG 0
 
-#define ADS7828_INT_VREF_MV	2500	/* Internal vref is 2.5V, 2500mV */
-#define ADS7828_EXT_VREF_MV_MIN	-300	/* External vref min value gnd - 0.3 */
-#define ADS7828_EXT_VREF_MV_MAX	6300	/* External vref max value Vdd + 0.3 */
+#define LTC2309_INT_VREF_MV	2500	/* Internal vref is 2.5V, 2500mV */
+#define LTC2309_EXT_VREF_MV_MIN	-300	/* External vref min value gnd - 0.3 */
+#define LTC2309_EXT_VREF_MV_MAX	6300	/* External vref max value Vdd + 0.3 */
 
 /* List of supported devices */
 enum ltc2309_chips { ltc2309 };
@@ -116,7 +116,7 @@ static int ltc2309_probe(struct i2c_client *client,
 	bool diff_input = false;
 	bool ext_vref = false;
 	unsigned int regval;
-	
+
 	data = devm_kzalloc(dev, sizeof(struct ltc2309_data), GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
@@ -153,5 +153,4 @@ module_i2c_driver(ltc2309_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sam Povilus <kernel.development@povil.us>");
-MODULE_DESCRIPTION("Driver for Linear Technology LTC2309 8-channel A/D "
-		   "converter");
+MODULE_DESCRIPTION("Driver for Linear Technology LTC2309 8-channel A/D converter");
