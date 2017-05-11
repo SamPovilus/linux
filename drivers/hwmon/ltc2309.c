@@ -41,6 +41,9 @@
 #define LTC2309_EXT_VREF_MV_MIN	-300	/* External vref min value gnd - 0.3 */
 #define LTC2309_EXT_VREF_MV_MAX	6300	/* External vref max value Vdd + 0.3 */
 
+#define LTC2309_CMD_SD_SE	0x80	/* Single ended inputs */
+#define LTC2309_CMD_UNIPOLAR	0x08	/* Single ended inputs */
+
 /* List of supported devices */
 enum ltc2309_chips { ltc2309 };
 
@@ -67,20 +70,23 @@ static ssize_t ltc2309_show_in(struct device *dev, struct device_attribute *da,
 	u8 cmd = ltc2309_cmd_byte(data->cmd_byte, attr->index);
 	s32 ret;
 
-	ret = i2c_smbus_write_byte(data->client, cmd);
+/*	ret = i2c_smbus_write_byte(data->client, cmd);
 	if(ret < 0)
 	{
 		pr_err("could not write to device\n");
-	}
+		}*/
+	pr_info("wote 0001 0x%x\n",cmd);
 	/* As far as I can tell the command word will be ignored */
-	ret = i2c_smbus_read_word_data(data->client, 0);
+	ret = i2c_smbus_read_word_data(data->client, cmd);
 	if (ret < 0)
 	{
 		pr_err("could not read from device");
 	}
-	ret = ret >> 4;
-	return sprintf(buf, "%d\n",
-		       DIV_ROUND_CLOSEST(ret * 4096, 1000));
+	pr_info("read 0x%x\n",ret);
+	/*ret = ret >> 4;*/
+	/*return sprintf(buf, "%d\n",
+	  DIV_ROUND_CLOSEST(ret * 4096, 1000));*/
+	return sprintf(buf, "0x%x\n",ret);
 }
 
 static SENSOR_DEVICE_ATTR(in0_input, S_IRUGO, ltc2309_show_in, NULL, 0);
@@ -128,6 +134,11 @@ static int ltc2309_probe(struct i2c_client *client,
 	hwmon_dev = devm_hwmon_device_register_with_groups(dev, client->name,
 							   data,
 							   ltc2309_groups);
+	if(1)
+	{
+		data->cmd_byte |= LTC2309_CMD_SD_SE;
+		data->cmd_byte |= LTC2309_CMD_UNIPOLAR;
+	}
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
